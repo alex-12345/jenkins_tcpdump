@@ -22,10 +22,12 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build release') {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
+                    CFLAGS="-O3" \
+                    CXXFLAGS="-O3" \
                     ./configure 
                     make -j$(nproc)
                     ''' 
@@ -42,7 +44,9 @@ pipeline {
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
-                    ./configure --enable-debugging
+                    CFLAGS="-O0 -g3" \
+                    CXXFLAGS="-O0 -g3" \
+                    ./configure 
                     make -j$(nproc)
                     ''' 
                 }
@@ -58,7 +62,9 @@ pipeline {
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
-                    CC=afl-cc CXX=afl-c++ ./configure --enable-debugging
+                    CFLAGS="-O0 -g3" \
+                    CXXFLAGS="-O0 -g3" \
+                    CC=afl-cc CXX=afl-c++ ./configure 
                     AFL_USE_ASAN=1 AFL_USE_UBSAN=1 make -j$(nproc)
                     ''' 
                 }
@@ -85,8 +91,8 @@ pipeline {
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
-                    CC=gcc CXX=g++ CFLAGS="-O0 -g3 --coverage" \
-                    CXXFLAGS="-O0 -g3 --coverage" ./configure  --enable-debugging
+                    CFLAGS="-O0 -g3 --coverage" \
+                    CXXFLAGS="-O0 -g3 --coverage" ./configure  
                     make -j$(nproc)
                     ''' 
                 }
