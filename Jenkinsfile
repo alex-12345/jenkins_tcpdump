@@ -11,12 +11,12 @@ pipeline {
                 }
                 dir("${env.WORKSPACE}") {
                     sh returnStatus: true, script: '''
-                    git clone https://github.com/alex-12345/tcpdump.git
+                    git clone https://github.com/the-tcpdump-group/tcpdump.git
                     '''
                 }
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
-                    git checkout tcpdump-4.5 -f
+                    git checkout tcpdump-4.5.0 -f
                     '''
                 }
             }
@@ -38,7 +38,7 @@ pipeline {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
                     make distclean
-                    git checkout tcpdump-4.5 -f
+                    git checkout tcpdump-4.5.0 -f
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
@@ -54,7 +54,7 @@ pipeline {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
                     make distclean
-                    git checkout tcpdump-4.5 -f
+                    git checkout tcpdump-4.5.0 -f
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
@@ -81,7 +81,7 @@ pipeline {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
                     make distclean
-                    git checkout tcpdump-4.5 -f
+                    git checkout tcpdump-4.5.0 -f
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
