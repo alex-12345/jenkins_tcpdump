@@ -11,7 +11,7 @@ pipeline {
                 }
                 dir("${env.WORKSPACE}") {
                     sh returnStatus: true, script: '''
-                    git clone https://github.com/the-tcpdump-group/tcpdump.git
+                    git clone https://github.com/alex-12345/tcpdump.git
                     '''
                 }
                 dir("${env.WORKSPACE}/tcpdump") {
