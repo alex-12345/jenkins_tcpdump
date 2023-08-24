@@ -96,8 +96,8 @@ pipeline {
         stage('Test coverage') {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
-                    sh returnStatus: true, script: '''
                     make check > coverage_report.txt
+                    sh returnStatus: true, script: '''
                     lcov -t "tcpdump" -o tcpdump.info -c -d .
                     genhtml -o report tcpdump.info | tail -n3 > coverage_short_report.txt
                     tar cJf coverage_report.tar.xz report
