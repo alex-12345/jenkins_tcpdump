@@ -26,7 +26,7 @@ pipeline {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
-                    ./configure --disable-shared --enable-threads=no
+                    ./configure 
                     make -j$(nproc)
                     ''' 
                 }
@@ -42,7 +42,7 @@ pipeline {
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
-                    ./configure --disable-shared --enable-threads=no --enable-debugging
+                    ./configure --enable-debugging
                     make -j$(nproc)
                     ''' 
                 }
@@ -58,7 +58,7 @@ pipeline {
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
-                    CC=afl-cc CXX=afl-c++ ./configure --disable-shared --enable-threads=no --enable-debugging
+                    CC=afl-cc CXX=afl-c++ ./configure --enable-debugging
                     AFL_USE_ASAN=1 AFL_USE_UBSAN=1 make -j$(nproc)
                     ''' 
                 }
@@ -71,7 +71,7 @@ pipeline {
                     sh returnStatus: true, script: '''
                     make check > sanitizers_report.txt
                     '''
-                    archiveArtifacts artifacts: '*report.*', followSymlinks: false
+                    archiveArtifacts artifacts: '*_report.*', followSymlinks: false
                 }
             }
         }
@@ -86,7 +86,7 @@ pipeline {
                     '''
                     sh returnStatus: true, script: '''
                     CC=gcc CXX=g++ CFLAGS="-O0 -g3 --coverage" \
-                    CXXFLAGS="-O0 -g3 --coverage" ./configure --disable-shared --enable-threads=no --enable-debugging
+                    CXXFLAGS="-O0 -g3 --coverage" ./configure  --enable-debugging
                     make -j$(nproc)
                     ''' 
                 }
@@ -98,8 +98,8 @@ pipeline {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
                     make check > coverage_report.txt
-                    lcov -t "file" -o file.info -c -d .
-                    genhtml -o report file.info | tail -n3 > coverage_short_report.txt
+                    lcov -t "tcpdump" -o tcpdump.info -c -d .
+                    genhtml -o report tcpdump.info | tail -n3 > coverage_short_report.txt
                     tar cJf coverage_report.tar.xz report
                     '''
                     archiveArtifacts artifacts: '*_report.*', followSymlinks: false
