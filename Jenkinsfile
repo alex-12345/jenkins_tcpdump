@@ -71,7 +71,7 @@ pipeline {
                     sh returnStatus: true, script: '''
                     make check > sanitizers_report.txt
                     '''
-                    archiveArtifacts artifacts: 'report.*', followSymlinks: false
+                    archiveArtifacts artifacts: '*report.*', followSymlinks: false
                 }
             }
         }
