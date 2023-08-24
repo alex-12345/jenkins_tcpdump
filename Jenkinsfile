@@ -26,6 +26,7 @@ pipeline {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
+                    autoreconf -if
                     ./configure --disable-shared --enable-threads=no
                     make -j$(nproc)
                     ''' 
@@ -42,6 +43,7 @@ pipeline {
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
+                    autoreconf -if
                     ./configure --disable-shared --enable-threads=no --enable-debugging
                     make -j$(nproc)
                     ''' 
@@ -58,6 +60,7 @@ pipeline {
                     git clean -fd
                     '''
                     sh returnStatus: true, script: '''
+                    autoreconf -if
                     CC=afl-cc CXX=afl-c++ ./configure --disable-shared --enable-threads=no --enable-debugging
                     AFL_USE_ASAN=1 AFL_USE_UBSAN=1 make -j$(nproc)
                     ''' 
