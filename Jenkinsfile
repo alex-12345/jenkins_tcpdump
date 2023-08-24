@@ -1,20 +1,11 @@
 pipeline {
-    agent any
-
+    agent { dockerfile true }
     stages {
-        stage('Build') {
-            steps {
-                echo 'Building..'
-            }
-        }
         stage('Test') {
             steps {
-                echo 'Testing..'
-            }
-        }
-        stage('Deploy') {
-            steps {
-                echo 'Deploying....'
+                sh 'gcc --version'
+                sh 'git --version'
+                sh 'apt list --installed | grep libpcap'
             }
         }
     }
