@@ -17,14 +17,14 @@ pipeline {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
                     git checkout tcpdump-4.5.0 -f
-                    mkdir -p patches
-                    cd patches
+                    mkdir -p ../patches
+                    cd ../patches
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_disableipv6.patch 
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_ssl_build.patch
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/testlist.fix.patch
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/utilc.fix.patch
-                    cd ..
-                    ls patches
+                    cd ../tcpdump
+                    ls ../patches
                     '''
                 }
             }
@@ -50,9 +50,9 @@ pipeline {
                     make distclean
                     git checkout tcpdump-4.5.0 -f
                     git clean -fd
-                    git apply patches/fix_disableipv6.patch
-                    git apply patches/fix_ssl_build.patch
-                    git apply patches/utilc.fix.patch
+                    git apply ../patches/fix_disableipv6.patch
+                    git apply ../patches/fix_ssl_build.patch
+                    git apply ../patches/utilc.fix.patch
                     '''
                     sh returnStatus: true, script: '''
                     export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3" && AFL_USE_UBSAN=1 AFL_USE_ASAN=1 CC=afl-gcc CXX=afl-g++ CFLAGS="$USER_BUILD_FLAGS" CXXFLAGS="$USER_BUILD_FLAGS" LDFLAGS="$USER_BUILD_FLAGS" ./configure
