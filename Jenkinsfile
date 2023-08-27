@@ -1,7 +1,6 @@
 pipeline {
 
-    agent { dockerfile true,
-            docker {args '-v $PWD/patches:/patches'} }
+    agent { dockerfile true }
     
     stages {
 
@@ -18,6 +17,13 @@ pipeline {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
                     git checkout tcpdump-4.5.0 -f
+                    mkdir -p patches
+                    cd patches
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_disableipv6.patch 
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_ssl_build.patch
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/testlist.fix.patch
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/utilc.fix.patch
+                    cd ..
                     ls /patches
                     '''
                 }
