@@ -1,0 +1,22 @@
+diff --git a/util.c b/util.c
+index a2ef36d7..032107da 100644
+--- a/util.c
++++ b/util.c
+@@ -325,7 +325,7 @@ bittok2str_internal(register const struct tok *lp, register const char *fmt,
+ {
+         static char buf[256]; /* our stringbuffer */
+         int buflen=0;
+-        register int rotbit; /* this is the bit we rotate through all bitpositions */
++        register unsigned int rotbit; /* this is the bit we rotate through all bitpositions */
+         register int tokval;
+ 
+ 	while (lp != NULL && lp->s != NULL) {
+@@ -342,7 +342,7 @@ bittok2str_internal(register const struct tok *lp, register const char *fmt,
+                                      lp->s, sep ? ", " : "");
+                     break;
+                 }
+-                rotbit=rotbit<<1; /* no match - lets shift and try again */
++                rotbit=rotbit<<UINT32_C(1); /* no match - lets shift and try again */
+             }
+             lp++;
+ 	}

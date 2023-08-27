@@ -1,0 +1,40 @@
+diff --git a/print-esp.c b/print-esp.c
+index 2c143cd6..61026788 100644
+--- a/print-esp.c
++++ b/print-esp.c
+@@ -102,7 +102,7 @@ int esp_print_decrypt_buffer_by_ikev2(netdissect_options *ndo,
+ 	struct sa_list *sa;
+ 	u_char *iv;
+ 	int len;
+-	EVP_CIPHER_CTX ctx;
++	EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+ 
+ 	/* initiator arg is any non-zero value */
+ 	if(initiator) initiator=1;
+@@ -135,7 +135,7 @@ int esp_print_decrypt_buffer_by_ikev2(netdissect_options *ndo,
+ 		(*ndo->ndo_warning)(ndo, "espkey init failed");
+ 	EVP_CipherInit(&ctx, NULL, NULL, iv, 0);
+ 	EVP_Cipher(&ctx, buf, buf, len);
+-	EVP_CIPHER_CTX_cleanup(&ctx);
++	EVP_CIPHER_CTX_free(ctx);
+ 
+ 	ndo->ndo_packetp = buf;
+ 	ndo->ndo_snapend = end;
+@@ -560,7 +560,7 @@ esp_print(netdissect_options *ndo,
+ 	int ivlen = 0;
+ 	u_char *ivoff;
+ 	u_char *p;
+-	EVP_CIPHER_CTX ctx;
++	EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+ 	int blocksz;
+ #endif
+ 
+@@ -678,7 +678,7 @@ esp_print(netdissect_options *ndo,
+ 		p = ivoff;
+ 		EVP_CipherInit(&ctx, NULL, NULL, p, 0);
+ 		EVP_Cipher(&ctx, p + ivlen, p + ivlen, ep - (p + ivlen));
+-		EVP_CIPHER_CTX_cleanup(&ctx);
++		EVP_CIPHER_CTX_free(ctx);
+ 		advance = ivoff - (u_char *)esp + ivlen;
+ 	} else
+ 		advance = sizeof(struct newesp);

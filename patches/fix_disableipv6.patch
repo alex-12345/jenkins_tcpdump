@@ -1,0 +1,394 @@
+diff --git a/configure b/configure
+index 1356816c..77b29e6c 100755
+--- a/configure
++++ b/configure
+@@ -5022,235 +5022,6 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
+ fi
+ 
+ 
+-if test "$ipv6" = "yes"; then
+-	#
+-	# XXX - on Tru64 UNIX 5.1, there is no "getaddrinfo()"
+-	# function in libc; there are "ngetaddrinfo()" and
+-	# "ogetaddrinfo()" functions, and <netdb.h> #defines
+-	# "getaddrinfo" to be either "ngetaddrinfo" or
+-	# "ogetaddrinfo", depending on whether _SOCKADDR_LEN
+-	# or _XOPEN_SOURCE_EXTENDED are defined or not.
+-	#
+-	# So this test doesn't work on Tru64 5.1, and possibly
+-	# on other 5.x releases.  This causes the configure
+-	# script to become confused, and results in libpcap
+-	# being unbuildable.
+-	#
+-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing getaddrinfo" >&5
+-$as_echo_n "checking for library containing getaddrinfo... " >&6; }
+-if ${ac_cv_search_getaddrinfo+:} false; then :
+-  $as_echo_n "(cached) " >&6
+-else
+-  ac_func_search_save_LIBS=$LIBS
+-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+-/* end confdefs.h.  */
+-
+-/* Override any GCC internal prototype to avoid an error.
+-   Use char because int might match the return type of a GCC
+-   builtin and then its argument prototype would still apply.  */
+-#ifdef __cplusplus
+-extern "C"
+-#endif
+-char getaddrinfo ();
+-int
+-main ()
+-{
+-return getaddrinfo ();
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-for ac_lib in '' socket; do
+-  if test -z "$ac_lib"; then
+-    ac_res="none required"
+-  else
+-    ac_res=-l$ac_lib
+-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+-  fi
+-  if ac_fn_c_try_link "$LINENO"; then :
+-  ac_cv_search_getaddrinfo=$ac_res
+-fi
+-rm -f core conftest.err conftest.$ac_objext \
+-    conftest$ac_exeext
+-  if ${ac_cv_search_getaddrinfo+:} false; then :
+-  break
+-fi
+-done
+-if ${ac_cv_search_getaddrinfo+:} false; then :
+-
+-else
+-  ac_cv_search_getaddrinfo=no
+-fi
+-rm conftest.$ac_ext
+-LIBS=$ac_func_search_save_LIBS
+-fi
+-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_getaddrinfo" >&5
+-$as_echo "$ac_cv_search_getaddrinfo" >&6; }
+-ac_res=$ac_cv_search_getaddrinfo
+-if test "$ac_res" != no; then :
+-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+-  	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking getaddrinfo bug" >&5
+-$as_echo_n "checking getaddrinfo bug... " >&6; }
+-	if ${td_cv_buggygetaddrinfo+:} false; then :
+-  $as_echo_n "(cached) " >&6
+-else
+-  if test "$cross_compiling" = yes; then :
+-  td_cv_buggygetaddrinfo=yes
+-else
+-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+-/* end confdefs.h.  */
+-
+-#include <sys/types.h>
+-#include <netdb.h>
+-#include <string.h>
+-#include <sys/socket.h>
+-#include <netinet/in.h>
+-
+-main()
+-{
+-  int passive, gaierr, inet4 = 0, inet6 = 0;
+-  struct addrinfo hints, *ai, *aitop;
+-  char straddr[INET6_ADDRSTRLEN], strport[16];
+-
+-  for (passive = 0; passive <= 1; passive++) {
+-    memset(&hints, 0, sizeof(hints));
+-    hints.ai_family = AF_UNSPEC;
+-    hints.ai_flags = passive ? AI_PASSIVE : 0;
+-    hints.ai_socktype = SOCK_STREAM;
+-    hints.ai_protocol = IPPROTO_TCP;
+-    if ((gaierr = getaddrinfo(NULL, "54321", &hints, &aitop)) != 0) {
+-      (void)gai_strerror(gaierr);
+-      goto bad;
+-    }
+-    for (ai = aitop; ai; ai = ai->ai_next) {
+-      if (ai->ai_addr == NULL ||
+-          ai->ai_addrlen == 0 ||
+-          getnameinfo(ai->ai_addr, ai->ai_addrlen,
+-                      straddr, sizeof(straddr), strport, sizeof(strport),
+-                      NI_NUMERICHOST|NI_NUMERICSERV) != 0) {
+-        goto bad;
+-      }
+-      switch (ai->ai_family) {
+-      case AF_INET:
+-        if (strcmp(strport, "54321") != 0) {
+-          goto bad;
+-        }
+-        if (passive) {
+-          if (strcmp(straddr, "0.0.0.0") != 0) {
+-            goto bad;
+-          }
+-        } else {
+-          if (strcmp(straddr, "127.0.0.1") != 0) {
+-            goto bad;
+-          }
+-        }
+-        inet4++;
+-        break;
+-      case AF_INET6:
+-        if (strcmp(strport, "54321") != 0) {
+-          goto bad;
+-        }
+-        if (passive) {
+-          if (strcmp(straddr, "::") != 0) {
+-            goto bad;
+-          }
+-        } else {
+-          if (strcmp(straddr, "::1") != 0) {
+-            goto bad;
+-          }
+-        }
+-        inet6++;
+-        break;
+-      case AF_UNSPEC:
+-        goto bad;
+-        break;
+-#ifdef AF_UNIX
+-      case AF_UNIX:
+-#else
+-#ifdef AF_LOCAL
+-      case AF_LOCAL:
+-#endif
+-#endif
+-      default:
+-        /* another family support? */
+-        break;
+-      }
+-    }
+-  }
+-
+-  /* supported family should be 2, unsupported family should be 0 */
+-  if (!(inet4 == 0 || inet4 == 2))
+-    goto bad;
+-  if (!(inet6 == 0 || inet6 == 2))
+-    goto bad;
+-
+-  if (aitop)
+-    freeaddrinfo(aitop);
+-  exit(0);
+-
+- bad:
+-  if (aitop)
+-    freeaddrinfo(aitop);
+-  exit(1);
+-}
+-
+-_ACEOF
+-if ac_fn_c_try_run "$LINENO"; then :
+-  td_cv_buggygetaddrinfo=no
+-else
+-  td_cv_buggygetaddrinfo=yes
+-fi
+-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+-  conftest.$ac_objext conftest.beam conftest.$ac_ext
+-fi
+-
+-fi
+-
+-	if test "$td_cv_buggygetaddrinfo" = no; then
+-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: good" >&5
+-$as_echo "good" >&6; }
+-	else
+-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: buggy" >&5
+-$as_echo "buggy" >&6; }
+-	fi
+-
+-	if test "$td_cv_buggygetaddrinfo" = "yes"; then
+-		#
+-		# XXX - it doesn't appear that "ipv6type" can ever be
+-		# set to "linux".  Should this be testing for
+-		# "linux-glibc", or for that *or* "linux-libinet6"?
+-		# If the latter, note that "linux-libinet6" is also
+-		# the type given to some non-Linux OSes.
+-		#
+-		if test "$ipv6type" != "linux"; then
+-			echo 'Fatal: You must get working getaddrinfo() function.'
+-			echo '       or you can specify "--disable-ipv6"'.
+-			exit 1
+-		else
+-			echo 'Warning: getaddrinfo() implementation on your system seems be buggy.'
+-			echo '         Better upgrade your system library to newest version'
+-			echo '         of GNU C library (aka glibc).'
+-		fi
+-	fi
+-
+-fi
+-
+-	ac_fn_c_check_func "$LINENO" "getnameinfo" "ac_cv_func_getnameinfo"
+-if test "x$ac_cv_func_getnameinfo" = xyes; then :
+-  $as_echo "#define HAVE_GETNAMEINFO 1" >>confdefs.h
+-
+-else
+-  case " $LIBOBJS " in
+-  *" getnameinfo.$ac_objext "* ) ;;
+-  *) LIBOBJS="$LIBOBJS getnameinfo.$ac_objext"
+- ;;
+-esac
+-
+-fi
+-
+-
+-fi
+-
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dnet_htoa declaration in netdnet/dnetdb.h" >&5
+ $as_echo_n "checking for dnet_htoa declaration in netdnet/dnetdb.h... " >&6; }
+ if ${td_cv_decl_netdnet_dnetdb_h_dnet_htoa+:} false; then :
+diff --git a/configure.in b/configure.in
+index a024d5f6..42e467b8 100644
+--- a/configure.in
++++ b/configure.in
+@@ -356,149 +356,6 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
+ 	fi
+ fi
+ 
+-
+-if test "$ipv6" = "yes"; then
+-	#
+-	# XXX - on Tru64 UNIX 5.1, there is no "getaddrinfo()"
+-	# function in libc; there are "ngetaddrinfo()" and
+-	# "ogetaddrinfo()" functions, and <netdb.h> #defines
+-	# "getaddrinfo" to be either "ngetaddrinfo" or
+-	# "ogetaddrinfo", depending on whether _SOCKADDR_LEN
+-	# or _XOPEN_SOURCE_EXTENDED are defined or not.
+-	#
+-	# So this test doesn't work on Tru64 5.1, and possibly
+-	# on other 5.x releases.  This causes the configure
+-	# script to become confused, and results in libpcap
+-	# being unbuildable.
+-	#
+-	AC_SEARCH_LIBS(getaddrinfo, socket, [dnl
+-	AC_MSG_CHECKING(getaddrinfo bug)
+-	AC_CACHE_VAL(td_cv_buggygetaddrinfo, [AC_TRY_RUN([
+-#include <sys/types.h>
+-#include <netdb.h>
+-#include <string.h>
+-#include <sys/socket.h>
+-#include <netinet/in.h>
+-
+-main()
+-{
+-  int passive, gaierr, inet4 = 0, inet6 = 0;
+-  struct addrinfo hints, *ai, *aitop;
+-  char straddr[INET6_ADDRSTRLEN], strport[16];
+-
+-  for (passive = 0; passive <= 1; passive++) {
+-    memset(&hints, 0, sizeof(hints));
+-    hints.ai_family = AF_UNSPEC;
+-    hints.ai_flags = passive ? AI_PASSIVE : 0;
+-    hints.ai_socktype = SOCK_STREAM;
+-    hints.ai_protocol = IPPROTO_TCP;
+-    if ((gaierr = getaddrinfo(NULL, "54321", &hints, &aitop)) != 0) {
+-      (void)gai_strerror(gaierr);
+-      goto bad;
+-    }
+-    for (ai = aitop; ai; ai = ai->ai_next) {
+-      if (ai->ai_addr == NULL ||
+-          ai->ai_addrlen == 0 ||
+-          getnameinfo(ai->ai_addr, ai->ai_addrlen,
+-                      straddr, sizeof(straddr), strport, sizeof(strport),
+-                      NI_NUMERICHOST|NI_NUMERICSERV) != 0) {
+-        goto bad;
+-      }
+-      switch (ai->ai_family) {
+-      case AF_INET:
+-        if (strcmp(strport, "54321") != 0) {
+-          goto bad;
+-        }
+-        if (passive) {
+-          if (strcmp(straddr, "0.0.0.0") != 0) {
+-            goto bad;
+-          }
+-        } else {
+-          if (strcmp(straddr, "127.0.0.1") != 0) {
+-            goto bad;
+-          }
+-        }
+-        inet4++;
+-        break;
+-      case AF_INET6:
+-        if (strcmp(strport, "54321") != 0) {
+-          goto bad;
+-        }
+-        if (passive) {
+-          if (strcmp(straddr, "::") != 0) {
+-            goto bad;
+-          }
+-        } else {
+-          if (strcmp(straddr, "::1") != 0) {
+-            goto bad;
+-          }
+-        }
+-        inet6++;
+-        break;
+-      case AF_UNSPEC:
+-        goto bad;
+-        break;
+-#ifdef AF_UNIX
+-      case AF_UNIX:
+-#else
+-#ifdef AF_LOCAL
+-      case AF_LOCAL:
+-#endif
+-#endif
+-      default:
+-        /* another family support? */
+-        break;
+-      }
+-    }
+-  }
+-
+-  /* supported family should be 2, unsupported family should be 0 */
+-  if (!(inet4 == 0 || inet4 == 2))
+-    goto bad;
+-  if (!(inet6 == 0 || inet6 == 2))
+-    goto bad;
+-
+-  if (aitop)
+-    freeaddrinfo(aitop);
+-  exit(0);
+-
+- bad:
+-  if (aitop)
+-    freeaddrinfo(aitop);
+-  exit(1);
+-}
+-],
+-	td_cv_buggygetaddrinfo=no,
+-	td_cv_buggygetaddrinfo=yes,
+-	td_cv_buggygetaddrinfo=yes)])
+-	if test "$td_cv_buggygetaddrinfo" = no; then
+-		AC_MSG_RESULT(good)
+-	else
+-		AC_MSG_RESULT(buggy)
+-	fi
+-
+-	if test "$td_cv_buggygetaddrinfo" = "yes"; then
+-		#
+-		# XXX - it doesn't appear that "ipv6type" can ever be
+-		# set to "linux".  Should this be testing for
+-		# "linux-glibc", or for that *or* "linux-libinet6"?
+-		# If the latter, note that "linux-libinet6" is also
+-		# the type given to some non-Linux OSes.
+-		#
+-		if test "$ipv6type" != "linux"; then
+-			echo 'Fatal: You must get working getaddrinfo() function.'
+-			echo '       or you can specify "--disable-ipv6"'.
+-			exit 1
+-		else
+-			echo 'Warning: getaddrinfo() implementation on your system seems be buggy.'
+-			echo '         Better upgrade your system library to newest version'
+-			echo '         of GNU C library (aka glibc).'
+-		fi
+-	fi
+-	])
+-	AC_REPLACE_FUNCS(getnameinfo)
+-fi
+-
+ AC_CACHE_CHECK([for dnet_htoa declaration in netdnet/dnetdb.h],
+ [td_cv_decl_netdnet_dnetdb_h_dnet_htoa],
+ [AC_EGREP_HEADER(dnet_htoa, netdnet/dnetdb.h,
