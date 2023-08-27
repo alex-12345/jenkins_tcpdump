@@ -24,71 +24,54 @@ pipeline {
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/testlist.fix.patch
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/utilc.fix.patch
                     cd ..
-                    ls /patches
+                    ls patches
                     '''
                 }
             }
         }
 
-        // stage('Build release') {
-        //     steps {
-        //         dir("${env.WORKSPACE}/tcpdump") {
-        //             sh returnStatus: true, script: '''
-        //             CFLAGS="-O3" \
-        //             CXXFLAGS="-O3" \
-        //             ./configure 
-        //             make -j$(nproc)
-        //             ''' 
-        //         }
-        //     }
-        // }
-
-        // stage('Build debug') {
-        //     steps {
-        //         dir("${env.WORKSPACE}/tcpdump") {
-        //             sh returnStatus: true, script: '''
-        //             make distclean
-        //             git checkout tcpdump-4.5.0 -f
-        //             git clean -fd
-        //             '''
-        //             sh returnStatus: true, script: '''
-        //             CFLAGS="-O0 -g3" \
-        //             CXXFLAGS="-O0 -g3" \
-        //             ./configure 
-        //             make -j$(nproc)
-        //             ''' 
-        //         }
-        //     }
-        // }
+        stage('Build release') {
+            steps {
+                dir("${env.WORKSPACE}/tcpdump") {
+                    sh returnStatus: true, script: '''
+                    CFLAGS="-O3" \
+                    CXXFLAGS="-O3" \
+                    ./configure 
+                    make -j$(nproc)
+                    ''' 
+                }
+            }
+        }
         
-        // stage('Build debug with sanitizers') {
-        //     steps {
-        //         dir("${env.WORKSPACE}/tcpdump") {
-        //             sh returnStatus: true, script: '''
-        //             make distclean
-        //             git checkout tcpdump-4.5.0 -f
-        //             git clean -fd
-        //             '''
-        //             sh returnStatus: true, script: '''
-        //             CFLAGS="-O0 -g3" \
-        //             CXXFLAGS="-O0 -g3" \
-        //             CC=afl-cc CXX=afl-c++ ./configure 
-        //             AFL_USE_ASAN=1 AFL_USE_UBSAN=1 make -j$(nproc)
-        //             ''' 
-        //         }
-        //     }
-        // }
+        stage('Build debug with sanitizers') {
+            steps {
+                dir("${env.WORKSPACE}/tcpdump") {
+                    sh returnStatus: true, script: '''
+                    make distclean
+                    git checkout tcpdump-4.5.0 -f
+                    git clean -fd
+                    git apply patches/fix_disableipv6.patch
+                    git apply patches/fix_ssl_build.patch
+                    git apply patches/utilc.fix.patch
+                    '''
+                    sh returnStatus: true, script: '''
+                    export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3" && AFL_USE_UBSAN=1 AFL_USE_ASAN=1 CC=afl-gcc CXX=afl-g++ CFLAGS="$USER_BUILD_FLAGS" CXXFLAGS="$USER_BUILD_FLAGS" LDFLAGS="$USER_BUILD_FLAGS" ./configure
+                    make -j$(nproc)
+                    ''' 
+                }
+            }
+        }
 
-        // stage('Test with sanitizers') {
-        //     steps {
-        //         dir("${env.WORKSPACE}/tcpdump") {
-        //             sh returnStatus: true, script: '''
-        //             make check > sanitizers_report.txt
-        //             '''
-        //             archiveArtifacts artifacts: '*_report.*', followSymlinks: false
-        //         }
-        //     }
-        // }
+        stage('Test with sanitizers') {
+            steps {
+                dir("${env.WORKSPACE}/tcpdump") {
+                    sh returnStatus: true, script: '''
+                    make check > sanitizers_report.txt
+                    '''
+                    archiveArtifacts artifacts: '*_report.*', followSymlinks: false
+                }
+            }
+        }
         
         // stage('Build with coverage') {
         //     steps {
