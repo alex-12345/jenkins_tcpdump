@@ -26,27 +26,29 @@ pipeline {
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/patches/utilc.fix.patch
                     cd ../tcpdump
                     ls ../patches
+
+
+
+                    screen ping ya.ru
+                    sleep 10
+                    killall screen
                     '''
                 }
             }
         }
 
-        stage('Build release') {
-            steps {
-                dir("${env.WORKSPACE}/tcpdump") {
-                    sh returnStatus: true, script: '''
-                    CFLAGS="-O3" \
-                    CXXFLAGS="-O3" \
-                    ./configure 
-                    make -j$(nproc)
-
-                    screen -S "M-tcpdump" ping ya.ru
-                    sleep 10
-                    killall screen
-                    ''' 
-                }
-            }
-        }
+        // stage('Build release') {
+        //     steps {
+        //         dir("${env.WORKSPACE}/tcpdump") {
+        //             sh returnStatus: true, script: '''
+        //             CFLAGS="-O3" \
+        //             CXXFLAGS="-O3" \
+        //             ./configure 
+        //             make -j$(nproc)
+        //             ''' 
+        //         }
+        //     }
+        // }
         
         // stage('Build debug with sanitizers and coverage via afl-g++') {
         //     steps {
