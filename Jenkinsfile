@@ -94,7 +94,7 @@ pipeline {
                     sh '''
                     pwd
                     ls 
-                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/ilustrate_output/sanitizer_make_check.txt
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/ilustrate_output/tt.sh
                     bash tt.sh
                     #for F in $PWD/tcpdumpfuzz/M/queue/*; do ./tcpdump -vvv -ee -nnr $F || true; done
                     #// for F in $PWD/tcpdumpfuzz/S-1/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
