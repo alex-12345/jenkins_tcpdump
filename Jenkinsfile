@@ -92,9 +92,11 @@ pipeline {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
+                    pwd
+                    ls 
                     for F in $PWD/tcpdumpfuzz/M/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
-                    for F in $PWD/tcpdumpfuzz/S-1/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
-                    for F in $PWD/tcpdumpfuzz/S-2/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
+                    // for F in $PWD/tcpdumpfuzz/S-1/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
+                    // for F in $PWD/tcpdumpfuzz/S-2/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
 
                     lcov -t "tcpdump" -o tcpdump.info -c -d .
                     genhtml -o report tcpdump.info | tail -n3 > coverage_short_report.txt
