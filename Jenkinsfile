@@ -67,8 +67,9 @@ pipeline {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
-                    afl-cmin.bash -i tests/ -o testmin -m none -- ./tcpdump -ee --vv -nnr @@ 
+                    afl-cmin.bash -i tests/ -o testmin -m none -- ./tcpdump -nnr @@ 
                     tar cJf testmin.tar.xz testmin
+                    ls testmin
                     '''
                     archiveArtifacts artifacts: 'testmin.tar.xz', followSymlinks: false
                 }
