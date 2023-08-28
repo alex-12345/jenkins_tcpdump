@@ -26,74 +26,67 @@ pipeline {
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/patches/utilc.fix.patch
                     cd ../tcpdump
                     ls ../patches
-                    export HOME=/root 
-                    echo $HOME
-                    ls -al /etc
-                    ls -al /
-                    ls -al /home
-                    cat /etc/passwd
-                    screen ping ya.ru
-                    sleep 1
-                    killall screen
-
                     '''
                 }
             }
         }
 
-        // stage('Build release') {
-        //     steps {
-        //         dir("${env.WORKSPACE}/tcpdump") {
-        //             sh returnStatus: true, script: '''
-        //             CFLAGS="-O3" \
-        //             CXXFLAGS="-O3" \
-        //             ./configure 
-        //             make -j$(nproc)
-        //             ''' 
-        //         }
-        //     }
-        // }
+        stage('Build release') {
+            steps {
+                dir("${env.WORKSPACE}/tcpdump") {
+                    sh returnStatus: true, script: '''
+                    CFLAGS="-O3" \
+                    CXXFLAGS="-O3" \
+                    ./configure 
+                    make -j$(nproc)
+                    ''' 
+                }
+            }
+        }
         
-        // stage('Build debug with sanitizers and coverage via afl-g++') {
-        //     steps {
-        //         dir("${env.WORKSPACE}/tcpdump") {
-        //             sh returnStatus: true, script: '''
-        //             make distclean
-        //             git checkout tcpdump-4.5.0 -f
-        //             git clean -fd
-        //             git apply ../patches/fix_disableipv6.patch
-        //             git apply ../patches/fix_ssl_build.patch
-        //             git apply ../patches/testlist.fix.patch
-        //             git apply ../patches/utilc.fix.patch
-        //             '''
-        //             sh returnStatus: true, script: '''
-        //             export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3 --coverage" && AFL_USE_UBSAN=1 AFL_USE_ASAN=1 CC=afl-gcc CXX=afl-g++ CFLAGS="$USER_BUILD_FLAGS" CXXFLAGS="$USER_BUILD_FLAGS" LDFLAGS="$USER_BUILD_FLAGS" ./configure
-        //             make -j$(nproc)
-        //             ''' 
-        //         }
-        //     }
-        // }
+        stage('Build debug with sanitizers and coverage via afl-g++') {
+            steps {
+                dir("${env.WORKSPACE}/tcpdump") {
+                    sh returnStatus: true, script: '''
+                    make distclean
+                    git checkout tcpdump-4.5.0 -f
+                    git clean -fd
+                    git apply ../patches/fix_disableipv6.patch
+                    git apply ../patches/fix_ssl_build.patch
+                    git apply ../patches/testlist.fix.patch
+                    git apply ../patches/utilc.fix.patch
+                    '''
+                    sh returnStatus: true, script: '''
+                    export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3 --coverage" && AFL_USE_UBSAN=1 AFL_USE_ASAN=1 CC=afl-gcc CXX=afl-g++ CFLAGS="$USER_BUILD_FLAGS" CXXFLAGS="$USER_BUILD_FLAGS" LDFLAGS="$USER_BUILD_FLAGS" ./configure
+                    make -j$(nproc)
+                    ''' 
+                }
+            }
+        }
 
-        // stage('fuzzing') {
-        //     steps {
-        //         dir("${env.WORKSPACE}/tcpdump") {
-        //             sh returnStatus: true, script: '''
-        //             afl-cmin.bash -i tests/ -o testmin -m none -- ./tcpdump -nnr @@ 
-        //             ls testmin
+        stage('fuzzing') {
+            steps {
+                dir("${env.WORKSPACE}/tcpdump") {
+                    sh returnStatus: true, script: '''
+                    afl-cmin.bash -i tests/ -o testmin -m none -- ./tcpdump -nnr @@ 
+                    ls testmin
 
-        //             AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "M-tcpdump" afl-fuzz -V 10 -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
-        //             # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "M-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
-        //             # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
-        //             # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
+                    AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -V 30 -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
+                    AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -V 30 -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
+                    AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -V 30 -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
 
-        //             tar cJf fuzzing_testmin.tar.xz testmin
-        //             tar cJf fuzzing_tcpdumpfuzz.tar.xz tcpdumpfuzz
+                    # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "M-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
+                    # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
+                    # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
 
-        //             '''
-        //             archiveArtifacts artifacts: '*fuzzing_*.tar.xz', followSymlinks: false
-        //         }
-        //     }
-        // }
+                    tar cJf fuzzing_testmin.tar.xz testmin
+                    tar cJf fuzzing_tcpdumpfuzz.tar.xz tcpdumpfuzz
+
+                    '''
+                    archiveArtifacts artifacts: '*fuzzing_*.tar.xz', followSymlinks: false
+                }
+            }
+        }
 
         // stage('Build debug with sanitizers and coverage') {
         //     steps {
