@@ -43,7 +43,7 @@ pipeline {
             }
         }
         
-        stage('Build debug with sanitizers') {
+        stage('Build debug with sanitizers and coverage via afl-g++') {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
@@ -52,36 +52,7 @@ pipeline {
                     git clean -fd
                     git apply ../patches/fix_disableipv6.patch
                     git apply ../patches/fix_ssl_build.patch
-                    git apply ../patches/utilc.fix.patch
-                    '''
-                    sh returnStatus: true, script: '''
-                    export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3" && AFL_USE_UBSAN=1 AFL_USE_ASAN=1 CC=afl-gcc CXX=afl-g++ CFLAGS="$USER_BUILD_FLAGS" CXXFLAGS="$USER_BUILD_FLAGS" LDFLAGS="$USER_BUILD_FLAGS" ./configure
-                    make -j$(nproc)
-                    ''' 
-                }
-            }
-        }
-
-        stage('Test with sanitizers') {
-            steps {
-                dir("${env.WORKSPACE}/tcpdump") {
-                    sh returnStatus: true, script: '''
-                    make check > sanitizers_report.txt
-                    '''
-                    archiveArtifacts artifacts: '*_report.*', followSymlinks: false
-                }
-            }
-        }
-
-        stage('Build debug with sanitizers and coverage') {
-            steps {
-                dir("${env.WORKSPACE}/tcpdump") {
-                    sh returnStatus: true, script: '''
-                    make distclean
-                    git checkout tcpdump-4.5.0 -f
-                    git clean -fd
-                    git apply ../patches/fix_disableipv6.patch
-                    git apply ../patches/fix_ssl_build.patch
+                    git apply ../patches/testlist.fix.patch
                     git apply ../patches/utilc.fix.patch
                     '''
                     sh returnStatus: true, script: '''
@@ -91,21 +62,52 @@ pipeline {
                 }
             }
         }
-        
-        stage('Test coverage') {
+
+        stage('fuzzing') {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
-                    make check > coverage_report.txt
+                    afl-cmin.bash -i tests/ -o testmin -m none -- ./tcpdump -ee --vv -nnr @@ 
+                    tar cJf testmin.tar.xz testmin
                     '''
-                    sh returnStatus: true, script: '''
-                    lcov -t "tcpdump" -o tcpdump.info -c -d .
-                    genhtml -o report tcpdump.info | tail -n3 > coverage_short_report.txt
-                    tar cJf coverage_report.tar.xz report
-                    '''
-                    archiveArtifacts artifacts: '*_report.*', followSymlinks: false
+                    archiveArtifacts artifacts: 'testmin.tar.xz', followSymlinks: false
                 }
             }
         }
+
+        // stage('Build debug with sanitizers and coverage') {
+        //     steps {
+        //         dir("${env.WORKSPACE}/tcpdump") {
+        //             sh returnStatus: true, script: '''
+        //             make distclean
+        //             git checkout tcpdump-4.5.0 -f
+        //             git clean -fd
+        //             git apply ../patches/fix_disableipv6.patch
+        //             git apply ../patches/fix_ssl_build.patch
+        //             git apply ../patches/utilc.fix.patch
+        //             '''
+        //             sh returnStatus: true, script: '''
+        //             export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3 --coverage" && AFL_USE_UBSAN=1 AFL_USE_ASAN=1 CC=afl-gcc CXX=afl-g++ CFLAGS="$USER_BUILD_FLAGS" CXXFLAGS="$USER_BUILD_FLAGS" LDFLAGS="$USER_BUILD_FLAGS" ./configure
+        //             make -j$(nproc)
+        //             ''' 
+        //         }
+        //     }
+        // }
+        
+        // stage('Test coverage') {
+        //     steps {
+        //         dir("${env.WORKSPACE}/tcpdump") {
+        //             sh returnStatus: true, script: '''
+        //             make check > coverage_report.txt
+        //             '''
+        //             sh returnStatus: true, script: '''
+        //             lcov -t "tcpdump" -o tcpdump.info -c -d .
+        //             genhtml -o report tcpdump.info | tail -n3 > coverage_short_report.txt
+        //             tar cJf coverage_report.tar.xz report
+        //             '''
+        //             archiveArtifacts artifacts: '*_report.*', followSymlinks: false
+        //         }
+        //     }
+        // }
     }
 }
