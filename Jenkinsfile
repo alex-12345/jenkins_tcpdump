@@ -19,10 +19,10 @@ pipeline {
                     git checkout tcpdump-4.5.0 -f
                     mkdir -p ../patches
                     cd ../patches
-                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_disableipv6.patch 
-                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_ssl_build.patch
-                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/testlist.fix.patch
-                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/utilc.fix.patch
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/patches/fix_disableipv6.patch 
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/patches/fix_ssl_build.patch
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/patches/testlist.fix.patch
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/patches/utilc.fix.patch
                     cd ../tcpdump
                     ls ../patches
                     '''
@@ -68,10 +68,20 @@ pipeline {
                 dir("${env.WORKSPACE}/tcpdump") {
                     sh returnStatus: true, script: '''
                     afl-cmin.bash -i tests/ -o testmin -m none -- ./tcpdump -nnr @@ 
-                    tar cJf testmin.tar.xz testmin
                     ls testmin
+
+                    AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "M-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
+                    AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
+                    AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
+
+                    sleep 10
+                    killall screen
+
+                    tar cJf fuzzing_testmin.tar.xz testmin
+                    tar cJf fuzzing_tcpdumpfuzz.tar.xz testmin
+
                     '''
-                    archiveArtifacts artifacts: 'testmin.tar.xz', followSymlinks: false
+                    archiveArtifacts artifacts: 'fuzzing_*.tar.xz', followSymlinks: false
                 }
             }
         }
