@@ -31,6 +31,7 @@ pipeline {
                     ls -al /etc
                     ls -al /
                     ls -al /home
+                    cat /etc/passwd
                     screen ping ya.ru
                     sleep 1
                     killall screen
