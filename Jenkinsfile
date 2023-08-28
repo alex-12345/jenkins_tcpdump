@@ -91,7 +91,7 @@ pipeline {
         stage('get coverage') {
             steps {
                 dir("${env.WORKSPACE}/tcpdump") {
-                    sh returnStatus: true, script: '''
+                    sh '''
                     pwd
                     ls 
                     for F in $PWD/tcpdumpfuzz/M/queue/*; do ./tcpdump -vvv -ee -nnr $F || true; done
