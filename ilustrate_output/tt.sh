@@ -1,0 +1,1 @@
+for F in $PWD/tcpdumpfuzz/M/queue/*; do ./tcpdump -vvv -ee -nnr $F || true; done

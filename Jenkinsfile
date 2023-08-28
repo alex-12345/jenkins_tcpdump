@@ -94,9 +94,11 @@ pipeline {
                     sh '''
                     pwd
                     ls 
-                    for F in $PWD/tcpdumpfuzz/M/queue/*; do ./tcpdump -vvv -ee -nnr $F || true; done
-                    // for F in $PWD/tcpdumpfuzz/S-1/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
-                    // for F in $PWD/tcpdumpfuzz/S-2/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
+                    wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/ilustrate_output/sanitizer_make_check.txt
+                    bash tt.sh
+                    #for F in $PWD/tcpdumpfuzz/M/queue/*; do ./tcpdump -vvv -ee -nnr $F || true; done
+                    #// for F in $PWD/tcpdumpfuzz/S-1/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
+                    #// for F in $PWD/tcpdumpfuzz/S-2/queue/*; do ./tcpdump -vvv -ee -nnr $F; done
 
                     lcov -t "tcpdump" -o tcpdump.info -c -d .
                     genhtml -o report tcpdump.info | tail -n3 > coverage_short_report.txt
