@@ -71,15 +71,15 @@ pipeline {
                     afl-cmin.bash -i tests/ -o testmin -m none -- ./tcpdump -nnr @@ 
                     ls testmin
 
-                    # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "M-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
+                    AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "M-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
                     # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
                     # AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
 
-                    # sleep 10
-                    #killall screen
+                    sleep 10
+                    killall screen
 
                     tar cJf fuzzing_testmin.tar.xz testmin
-                    #tar cJf fuzzing_tcpdumpfuzz.tar.xz testmin
+                    tar cJf fuzzing_tcpdumpfuzz.tar.xz testmin
 
                     '''
                     archiveArtifacts artifacts: '*fuzzing_*.tar.xz', followSymlinks: false
