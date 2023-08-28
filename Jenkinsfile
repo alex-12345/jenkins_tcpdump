@@ -27,11 +27,14 @@ pipeline {
                     cd ../tcpdump
                     ls ../patches
 
-
-
+                    echo $HOME
+                    ls -al /etc
+                    ls -al /
+                    ls -al /home
                     screen ping ya.ru
-                    sleep 10
+                    sleep 1
                     killall screen
+
                     '''
                 }
             }
