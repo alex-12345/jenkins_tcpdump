@@ -3,154 +3,143 @@
 Задание 3\
 Вариант 1
 
-### Исправление недочетов 1 практической работы ###
 
-В рамках первой практической работы мною был сделан анализ покрытия кода встроенными тестами. Который должен был выполнятся в рамках второй (данной) практической работы. Однако помимо этого были допущены некоторые вещи которые небоходимо исправить.
+Все необходимые фиксы исходного кода необходимые для фаззинга, сборки с санитайзерами и сбора покрытия описаны в [ПР2](https://github.com/alex-12345/jenkins_tcpdump/blob/lab2/README.md) 
 
-#### 1. Некорректный результат тестов в отладной сборке ####
 
-В сборке с сантийзерами падали почти все тесты (см скриншот ниже).
-Это было связано с тем что отладночная версия собиралась клангом и в случае проблемы с ipv6 clang просто проигнорировал ее. Теперь отладочная версия собирается с помоощью gcc так
+### Отчетные материалы ПР3 ###
 
-```Bash
-export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3" && AFL_USE_UBSAN=1 AFL_USE_ASAN=1 CC=afl-gcc CXX=afl-g++ CFLAGS="$USER_BUILD_FLAGS" CXXFLAGS="$USER_BUILD_FLAGS" LDFLAGS="$USER_BUILD_FLAGS" ./configure
-```
+Полная последовательность команд представлена в [Jenkinsfile](./Jenkinsfile)
 
-Проблема при сборке таким образом сразу же отображается
+Оставлю некоторые комментарии
 
-![Проблема при сборке](images/ipv6problem.png)
+Необходимая сборка компилятора осуществляется в фазе `Build debug with sanitizers and coverage via afl-g++` для сборки используется компилятор `afl-gcc`
 
-Данная проблема уходит в версии tcpdump-4.8.0. По анализу коммитов был сделан патч [fix_disableipv6.patch](patches/fix_disableipv6.patch)
-
-он применяется в Dockerfile так
-```Bash
-git apply ../patches/fix_disableipv6.patch
-```
-
-Также если уставлен openssl появляяется такая ошибка 
-
-![openssl_problem](images/openssl_build_problem.png)
-
-Ее также можно пофиксить созданным мною патчем [fix_ssl_build.patch](patches/fix_ssl_build.patch)
+Передаются следующие флаги
 
 ```Bash
-git apply ../patches/fix_ssl_build.patch
-```
-
-При каждом запуске для сборка трафика появлялась следующая ошибка
-
-![runtime_error](images/runtime_error.png)
-
-Ее также можно пофиксить созданным мною патчем [utilc.fix.patch](patches/utilc.fix.patch)
-
-```Bash
-git apply ../patches/utilc.fix.patch
-```
-
-Теперь после запуска тестов для отладочной версии падают только 7 тестов как и в релизной версии. Вывод можно увидеть в файле [ilustrate_output/sanitizer_make_check.txt](ilustrate_output/sanitizer_make_check.txt)
-
-Там видно что падают 7 тестов. Согласно данном [issue](https://github.com/the-tcpdump-group/tcpdump/issues/381) Проблема ведет к openssl1.0-dev. Однако ее нельзя напрямую поставить через `apt`. После скачивания и установки напрямую
-
-```bash
-wget http://launchpadlibrarian.net/668090209/libssl1.0.0_1.0.2n-1ubuntu5.13_i386.deb
-wget http://launchpadlibrarian.net/668090205/libssl1.0-dev_1.0.2n-1ubuntu5.13_i386.deb
-sudo apt install ./libssl1.0.0_1.0.2n-1ubuntu5.13_i386.deb
-sudo apt install ./libssl1.0-dev_1.0.2n-1ubuntu5.13_i386.deb
-```
-
-Результат стал лучше (теперь он не просто игнорирует входные данные, а выдает правильный результат хоть и не достаточно полный). Такойже как и в этом [issue](https://giters.com/mcr/tcpdump/issues/33)
-
-Неполна выглядит примерно так
+-fsanitize=address \ # включаем сантиайзер на отслеживание утечек памяти, неправильных адресов и прочего
+-fsanitize=undefined \ #включаем санитайзер отслеживающий undefined behavior ситации
+-O0 \ # выключаем оптимизации
+-g3 \ # включаем отладочную инфу
+--coverage # собираем покрытие (профиль)
 
 ```
-< IP 192.1.2.23.4500 > 192.1.2.45.4500: UDP-encap: ESP(spi=0x12345678,seq=0x2), length 116
-< IP 192.1.2.23.4500 > 192.1.2.45.4500: UDP-encap: ESP(spi=0x12345678,seq=0x3), length 116
----
-> IP 192.1.2.23.4500 > 192.1.2.45.4500: UDP-encap: ESP(spi=0x12345678,seq=0x2), length 116:  ip-proto-227 49
-> IP 192.1.2.23.4500 > 192.1.2.45.4500: UDP-encap: ESP(spi=0x12345678,seq=0x3), length 116: PIMv13, length 10
-```
 
-Учитывая дату ошибки (11 лет назад) скорее всего данную ошибку будет очень сложно исправить (так как окружение в современном дистрибутиве отличается колоссально)
-
-В дальнейшем для отключения данных тестов используется патч [testlist.fix.patch](patches/testlist.fix.patch)
-
-```Bash
-git apply ../patches/testlist.fix.patch
-```
-
-
-### Отчетные материалы ПР2 ###
-
-#### 1. Описать порядок сборки ОО с инструментацией для анализа покрытия кода (команды сборки ОО с инструментацией для анализа покрытия кода, содержимое docker-файла). ####
-
-Отладочная сборка для анализа покрытия с санитайзерами осуществляется так:
-
+Полностью команда следующая
 ```Bash
 export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3 --coverage" && AFL_USE_UBSAN=1 AFL_USE_ASAN=1 CC=afl-gcc CXX=afl-g++ CFLAGS="$USER_BUILD_FLAGS" CXXFLAGS="$USER_BUILD_FLAGS" LDFLAGS="$USER_BUILD_FLAGS" ./configure
-make -j$(nproc) # собираем
+                    make -j$(nproc)
 ```
 
-Предварительно применяются необходимые патчи:
 
-```
-git apply ../patches/fix_disableipv6.patch
-git apply ../patches/fix_ssl_build.patch
-git apply ../patches/utilc.fix.patch
-```
+Далее к корпусу входных документов
 
-Папка patches скачивается из данного гит репо сразу же после checkout репозитория tcpdump
+Позаимствовал идею [отсюда](https://www.youtube.com/watch?v=iXCthIsxrz8&t=1s) Так как входными данными являются данные в бинарном формате pcap то сложно что то быстро придумать
 
-```bash
-mkdir -p ../patches
-cd ../patches
-wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_disableipv6.patch 
-wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_ssl_build.patch
-wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/testlist.fix.patch
-wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/utilc.fix.patch
-cd ../tcpdump
-```
-
-#### 2. Описать порядок запуска тестирования и оценки покрытия кода (команды запуска тестирования, содержимое docker-файла, представить результаты анализа покрытия кода). ####
-
-Cбор покрытия осуществляется следующей последовательностью команд:
+Взял исходные тесты (которые выполнились успешно) из папки tests проекта и прогнал их через минимизатор afl-cmin.bash
 
 ```Bash
-make check > coverage_report.txt # запускаем тесты и записываем вывод
-lcov -t "tcpdump" -o tcpdump.info -c -d . # собираем данные gcda
-genhtml -o report tcpdump.info | tail -n3 > coverage_short_report.txt # генерируем html отчет и процент покрытия в тесктовом варианте
-tar cJf coverage_report.tar.xz report # архивируем полученные html отчеты
+git apply ../patches/testlist.fix.patch # убарали нерабочие тесты
+afl-cmin.bash -i tests/ -o testmin -m none -- ./tcpdump -nnr @@ 
+# Здесь -i входная директория 
+#       -o выходная директория 
+#       -m лимит по памяти
+#       -nnr флаг что происходит чтение из файла для tcpdump
 ```
-####  3. Описать порядок запуска тестирования для ОО со встроенными датчиками ошибок (команды запуска тестирования, содержимое docker-файла). #### 
 
-Аналигично пункту 1 только без флага --coverage
+Пример выполнения этого скрипта (на локальной машине) можно видеть на скриншоте
 
-####   4. Описать ключевые особенности сбора покрытия, описать особенности текущего покрытия кода тестами (скриншоты, артефакты). ####  
+![мнимиззация](/images/cmin.png)
 
-После выполнения пайплайна пролучаем следующие артефакты (см скриншот) 
+После чего запускаем фаззинг следующими командами в паралельном режиме
 
-![Артефакты](images/artifacts.png)
+```Bash
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "M-tcpdump" -d -m  afl-fuzz -V 100 -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-1-tcpdump" -d -m  afl-fuzz -V 100 -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 screen -S "S-2-tcpdump" -d -m  afl-fuzz -V 100 -i testmin -o tcpdumpfuzz -S "S-2" -- ./tcpdump -vvv -ee -nnr @@
+# Здесь -S "M-tcpdump" - имя сокета для screen
+#       -d -m (включаем detach и игнорируем ошибки связанные с $STY) 
+# Для afl-fuzz
+#       -V 100 время выполнения 100 сек
+#       -S/M - Идетификация процесса (имя master/slave)
+#       -i входная директория 
+#       -o выходная директория 
+# Для  tcpdump
+#       -vvv -ee (печатаем максимальную отладочную информацию и ошибки)
+#       -nnr читаем из файла
 
-Здесь:
-- coverage_report.tar.xz	- архив с html отчетами по покрытию тестами
-- coverage_report.txt - выхлоп make check сборки с покрытием
-- coverage_short_report.txt	- краткая сводка по общему проценту покрытия
-- sanitizers_report.txt -выхлоп make check сборки с покрытием
+```
+Пример работы на локальной машине
+
+![фазинг](images/fuzzing_treads.png)
+
+Графическое окно фазера можно увидеть на скриншоте ниже 
+
+![фазинг2](images/plot.png)
+
+**В Jenkins возникла проблема с идентификации пользователя для screen**  (См скриншоты ниже)
+
+![проблема1](images/jen1.png)
+
+![проблема2](images/jen2.png)
+
+В результате в jenkins пришлось отказаться от потоков и там выполгняется такой же код только без screen 
+
+**Это единственное место в Jenkins которое отличается от запуска на локальной пашине**
+
+```Bash 
+ AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -V 100 -i testmin -o tcpdumpfuzz -M "M" -- ./tcpdump -vvv -ee -nnr @@
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -V 100 -i testmin -o tcpdumpfuzz -S "S-1" -- ./tcpdump -vvv -ee -nnr @@
+AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -V 100 -i testmin -o tcpdumpfuzz -S "S-2" -- ./tcpdump -vvv -ee -nnr @@
+# Здесь для afl-fuzz
+#       -V 100 время выполнения 100 сек
+#       -S/M - Идетификация процесса (имя master/slave)
+#       -i входная директория 
+#       -o выходная директория 
+# Для  tcpdump
+#       -vvv -ee (печатаем максимальную отладочную информацию и ошибки)
+#       -nnr читаем из файла
+
+```
+
+Далее проходимся по очередям фаззинга чтобы собрать профиль для оценки покрытия тестам. Из-за особеностей Jenkins его пришлось выделить в отдельный скрипт [get_covarege.sh](scripts/get_covarege.sh)
+
+```Bash
+for F in $PWD/tcpdumpfuzz/M/queue/*; do ./tcpdump -vvv -ee -nnr $F || true; done
+for F in $PWD/tcpdumpfuzz/S-1/queue/*; do ./tcpdump -vvv -ee -nnr $F || true; done
+for F in $PWD/tcpdumpfuzz/S-2/queue/*; do ./tcpdump -vvv -ee -nnr $F || true; done
+```
+
+После того как профиль собрам запускаем генерацию отчета уже описанным во второй ПР способом через lcov
+
+```Bash
+lcov -t "tcpdump" -o tcpdump.info -c -d .
+genhtml -o report tcpdump.info | tail -n3 > coverage_short_report.txt
+```
+
+Как результат в Jenkins после сборки имеем 4 файла (см скришот ниже)
+- coverage_report.tar.xz - html отчеты покрытия
+- coverage_short_report.txt - информация об общем проценте покрытия
+- fuzzing_tcpdumpfuzz.tar.xz	- выходные данные фазера
+- fuzzing_testmin.tar.xz	- минимизированный корпус входных документов
+
+![резульат](images/jen_fin.png)
 
 
-Открыв html отчет видим следующую картину:
-![покрытие](/images/cov.png)
+Посмотрим html отчеты
 
-Строки кода покрыты тестами на 18.6%
-Функции - на 31.9%
+![резульат_отчет](images/cov.png)
 
-Можно полазить по отчетам и посмотреть какие именно участки кода и файлы вообще были покрыты
+По результату видно что удалось по сравнению со второй ПР повысить покрытие кода с 18.6% до 23.8 %, функций - с 31.9% до  38.0 %
 
-![покрытие1](/images/cov2.png)
+**Для файзера запущенного на виртуальной машине в докере считаю что это неплохой резульат**
 
-![покрытие2](/images/cov3.png)
+Также в процессе фазинга были собраны краши, их можно увидеть в архиве fuzzing_tcpdumpfuzz.tar.xz 
 
-#### 5. Описать порядок добавления заданий на сборку и анализ покрытия в CI/CD системе Jenkins. ####
+![краши](images/crushes.png)
 
-Как и первой практической работе пайплаин создан как Pipline script from SCM но уже из ветки lab2
+Все описанное работает в Jenkins необходимо только создать pipeline указав данный репо и ветку
+
 
 ![пайплаин](/images/jenkins_pipe.png)
