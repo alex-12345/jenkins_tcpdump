@@ -24,7 +24,7 @@ export USER_BUILD_FLAGS="-fsanitize=address -fsanitize=undefined -O0 -g3" && AFL
 
 он применяется в Dockerfile так
 ```Bash
-git apply patches/fix_disableipv6.patch
+git apply ../patches/fix_disableipv6.patch
 ```
 
 Также если уставлен openssl появляяется такая ошибка 
@@ -34,7 +34,7 @@ git apply patches/fix_disableipv6.patch
 Ее также можно пофиксить созданным мною патчем [fix_ssl_build.patch](patches/fix_ssl_build.patch)
 
 ```Bash
-git apply /patches/fix_ssl_build.patch
+git apply ../patches/fix_ssl_build.patch
 ```
 
 При каждом запуске для сборка трафика появлялась следующая ошибка
@@ -44,7 +44,7 @@ git apply /patches/fix_ssl_build.patch
 Ее также можно пофиксить созданным мною патчем [utilc.fix.patch](patches/utilc.fix.patch)
 
 ```Bash
-git apply /patches/utilc.fix.patch
+git apply ../patches/utilc.fix.patch
 ```
 
 Теперь после запуска тестов для отладочной версии падают только 7 тестов как и в релизной версии. Вывод можно увидеть в файле [ilustrate_output/sanitizer_make_check.txt](ilustrate_output/sanitizer_make_check.txt)
@@ -75,7 +75,7 @@ sudo apt install ./libssl1.0-dev_1.0.2n-1ubuntu5.13_i386.deb
 В дальнейшем для отключения данных тестов используется патч [testlist.fix.patch](patches/testlist.fix.patch)
 
 ```Bash
-git apply patches/testlist.fix.patch
+git apply ../patches/testlist.fix.patch
 ```
 
 
@@ -93,12 +93,22 @@ make -j$(nproc) # собираем
 Предварительно применяются необходимые патчи:
 
 ```
-git apply /patches/fix_disableipv6.patch
-git apply /patches/fix_ssl_build.patch
-git apply /patches/utilc.fix.patch
+git apply ../patches/fix_disableipv6.patch
+git apply ../patches/fix_ssl_build.patch
+git apply ../patches/utilc.fix.patch
 ```
 
-Папка patches пробрасывается в Dockerfile из данного репозитория
+Папка patches скачивается из данного гит репо сразу же после checkout репозитория tcpdump
+
+```bash
+mkdir -p ../patches
+cd ../patches
+wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_disableipv6.patch 
+wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/fix_ssl_build.patch
+wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/testlist.fix.patch
+wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab2/patches/utilc.fix.patch
+cd ../tcpdump
+```
 
 #### 2. Описать порядок запуска тестирования и оценки покрытия кода (команды запуска тестирования, содержимое docker-файла, представить результаты анализа покрытия кода). ####
 
@@ -116,6 +126,17 @@ tar cJf coverage_report.tar.xz report # архивируем полученны�
 
 ####   4. Описать ключевые особенности сбора покрытия, описать особенности текущего покрытия кода тестами (скриншоты, артефакты). ####  
 
+После выполнения пайплайна пролучаем следующие артефакты (см скриншот) 
+
+![Артефакты](images/artifacts.png)
+
+Здесь:
+- coverage_report.tar.xz	- архив с html отчетами по покрытию тестами
+- coverage_report.txt - выхлоп make check сборки с покрытием
+- coverage_short_report.txt	- краткая сводка по общему проценту покрытия
+- sanitizers_report.txt -выхлоп make check сборки с покрытием
+
+
 Открыв html отчет видим следующую картину:
 ![покрытие](/images/cov.png)
 
@@ -124,9 +145,9 @@ tar cJf coverage_report.tar.xz report # архивируем полученны�
 
 Можно полазить по отчетам и посмотреть какие именно участки кода и файлы вообще были покрыты
 
-![покрытие1](/images/cov1.png)
+![покрытие1](/images/cov2.png)
 
-![покрытие2](/images/cov2.png)
+![покрытие2](/images/cov3.png)
 
 #### 5. Описать порядок добавления заданий на сборку и анализ покрытия в CI/CD системе Jenkins. ####
 
