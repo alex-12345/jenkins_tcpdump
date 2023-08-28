@@ -26,7 +26,7 @@ pipeline {
                     wget https://raw.githubusercontent.com/alex-12345/jenkins_tcpdump/lab3/patches/utilc.fix.patch
                     cd ../tcpdump
                     ls ../patches
-
+                    export HOME=/root 
                     echo $HOME
                     ls -al /etc
                     ls -al /
