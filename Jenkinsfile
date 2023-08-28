@@ -81,7 +81,7 @@ pipeline {
                     tar cJf fuzzing_tcpdumpfuzz.tar.xz testmin
 
                     '''
-                    archiveArtifacts artifacts: 'fuzzing_*.tar.xz', followSymlinks: false
+                    archiveArtifacts artifacts: '*fuzzing_*.tar.xz', followSymlinks: false
                 }
             }
         }
